@@ -1,0 +1,16 @@
+[Unit]
+Description=Fingerprint Attendance System
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/attendance-system
+ExecStart=/usr/bin/python3 /home/pi/attendance-system/attendance_marker.py http://YOUR_SERVER_URL/functions/v1/mark-attendance /dev/ttyUSB0
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
