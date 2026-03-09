@@ -36,7 +36,7 @@ function App() {
               </div>
               <div className="min-w-0">
                 <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">
-                  BCHS Fingerprint Attendance System
+                  BCHS Attendance System
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">
                   Fingerprint-based attendance tracking
