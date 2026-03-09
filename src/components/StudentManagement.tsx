@@ -154,11 +154,11 @@ export function StudentManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold text-gray-800">Student Management</h2>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
           {showForm ? <X size={20} /> : <Plus size={20} />}
           {showForm ? 'Cancel' : 'Add Student'}
@@ -166,11 +166,11 @@ export function StudentManagement() {
       </div>
 
       {showForm && (
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
           <h3 className="text-lg font-semibold mb-4">
             {editingId ? 'Edit Student' : 'Add New Student'}
           </h3>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Student ID *
@@ -267,10 +267,10 @@ export function StudentManagement() {
                 placeholder="+1234567890"
               />
             </div>
-            <div className="flex items-end gap-2">
+            <div className="sm:col-span-2 flex flex-col sm:flex-row items-center gap-2">
               <button
                 type="submit"
-                className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
               >
                 <Save size={20} />
                 {editingId ? 'Update' : 'Save'}
@@ -279,7 +279,7 @@ export function StudentManagement() {
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="flex items-center gap-2 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
                 >
                   <X size={20} />
                   Cancel
@@ -290,33 +290,34 @@ export function StudentManagement() {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      {/* Desktop Table View */}
+      <div className="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Student ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Class
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Section
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Fingerprint ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Email
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -324,58 +325,55 @@ export function StudentManagement() {
             <tbody className="bg-white divide-y divide-gray-200">
               {students.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={8} className="px-4 sm:px-6 py-4 text-center text-gray-500">
                     No students found. Add your first student above.
                   </td>
                 </tr>
               ) : (
                 students.map((student) => (
                   <tr key={student.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {student.student_id}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {student.name}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {student.class_grade}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {student.section}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {student.fingerprint_id}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {student.email || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {student.phone || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       <button
                         onClick={() => toggleActive(student.id, student.is_active)}
-                        className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        className={`px-2 py-1 text-xs font-semibold rounded-full transition-colors ${
                           student.is_active
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                            : 'bg-red-100 text-red-800 hover:bg-red-200'
                         }`}
                       >
                         {student.is_active ? 'Active' : 'Inactive'}
                       </button>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleEdit(student)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-blue-600 hover:text-blue-900 p-1"
                           title="Edit"
                         >
                           <Edit2 size={18} />
                         </button>
                         <button
                           onClick={() => handleDelete(student.id)}
-                          className="text-red-600 hover:text-red-900"
+                          className="text-red-600 hover:text-red-900 p-1"
                           title="Delete"
                         >
                           <Trash2 size={18} />
@@ -388,6 +386,79 @@ export function StudentManagement() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {students.length === 0 ? (
+          <div className="bg-white rounded-lg p-8 text-center">
+            <p className="text-gray-500">No students found. Add your first student above.</p>
+          </div>
+        ) : (
+          students.map((student) => (
+            <div key={student.id} className="bg-white rounded-lg shadow-md p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900">{student.name}</p>
+                  <p className="text-xs text-gray-600">ID: {student.student_id}</p>
+                </div>
+                <button
+                  onClick={() => toggleActive(student.id, student.is_active)}
+                  className={`px-2 py-1 text-xs font-semibold rounded-full flex-shrink-0 ml-2 transition-colors ${
+                    student.is_active
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                  }`}
+                >
+                  {student.is_active ? 'Active' : 'Inactive'}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-4 text-sm border-b pb-4">
+                <div>
+                  <p className="text-xs text-gray-600">Class</p>
+                  <p className="font-medium text-gray-900">{student.class_grade}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Section</p>
+                  <p className="font-medium text-gray-900">{student.section}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Fingerprint ID</p>
+                  <p className="font-medium text-gray-900">{student.fingerprint_id}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Phone</p>
+                  <p className="font-medium text-gray-900 truncate">{student.phone || '-'}</p>
+                </div>
+              </div>
+
+              {student.email && (
+                <div className="mb-4 text-sm">
+                  <p className="text-xs text-gray-600">Email</p>
+                  <p className="font-medium text-gray-900 break-all">{student.email}</p>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleEdit(student)}
+                  className="flex-1 flex items-center justify-center gap-2 bg-blue-50 text-blue-600 px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  <Edit2 size={16} />
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(student.id)}
+                  className="flex-1 flex items-center justify-center gap-2 bg-red-50 text-red-600 px-3 py-2 rounded-lg hover:bg-red-100 transition-colors"
+                >
+                  <Trash2 size={16} />
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

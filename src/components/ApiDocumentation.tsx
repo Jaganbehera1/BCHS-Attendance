@@ -74,21 +74,21 @@ if __name__ == "__main__":
         <h2 className="text-2xl font-bold text-gray-800 mb-2">
           Raspberry Pi Integration Guide
         </h2>
-        <p className="text-gray-600">
+        <p className="text-gray-600 text-sm sm:text-base">
           Use this API to connect your fingerprint sensor with the attendance system
         </p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Fingerprint size={24} className="text-blue-600" />
-          <h3 className="text-xl font-semibold text-gray-800">Setup Instructions</h3>
+          <Fingerprint size={24} className="text-blue-600 flex-shrink-0" />
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Setup Instructions</h3>
         </div>
 
         <div className="space-y-4">
           <div className="bg-blue-50 border-l-4 border-blue-600 p-4">
-            <h4 className="font-semibold text-blue-900 mb-2">Hardware Requirements</h4>
-            <ul className="list-disc list-inside text-sm text-blue-800 space-y-1">
+            <h4 className="font-semibold text-blue-900 mb-2 text-sm sm:text-base">Hardware Requirements</h4>
+            <ul className="list-disc list-inside text-xs sm:text-sm text-blue-800 space-y-1">
               <li>Raspberry Pi (any model with network connectivity)</li>
               <li>Fingerprint sensor module (e.g., R307, AS608, or similar)</li>
               <li>USB-to-TTL converter (if needed for your sensor)</li>
@@ -97,7 +97,7 @@ if __name__ == "__main__":
           </div>
 
           <div className="bg-green-50 border-l-4 border-green-600 p-4">
-            <h4 className="font-semibold text-green-900 mb-2">Software Requirements</h4>
+            <h4 className="font-semibold text-green-900 mb-2 text-sm sm:text-base">Software Requirements</h4>
             <ul className="list-disc list-inside text-sm text-green-800 space-y-1">
               <li>Python 3.7 or higher</li>
               <li>
