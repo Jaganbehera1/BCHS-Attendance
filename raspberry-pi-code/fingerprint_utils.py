@@ -17,6 +17,8 @@ class FingerprintSensor:
     CMD_REGMODEL = 0x05
     CMD_STORE = 0x06
     CMD_LOAD = 0x07
+    CMD_UPCHAR = 0x08  # Upload template from sensor
+    CMD_DOWNCHAR = 0x09  # Download template to sensor
     CMD_DPSYS = 0x0E
     CMD_EMPTYDATABASE = 0x0D
     CMD_LEDON = 0x50
@@ -132,6 +134,39 @@ class FingerprintSensor:
             return True
         return False
 
+    def load_template(self, finger_id):
+        """Load template from sensor memory"""
+        data, packet_type = self.send_command(self.CMD_LOAD, [0x01, (finger_id >> 8) & 0xFF, finger_id & 0xFF])
+        if data and data[0] == 0x00:
+            return True
+        return False
+
+    def upload_template(self):
+        """Upload template from sensor to host"""
+        data, packet_type = self.send_command(self.CMD_UPCHAR, [0x01])
+        if data and data[0] == 0x00:
+            # Read the template data (512 bytes for R307)
+            template_data = self.serial.read(512)
+            if len(template_data) == 512:
+                return template_data
+        return None
+
+    def download_template(self, template_data):
+        """Download template from host to sensor"""
+        if len(template_data) != 512:
+            return False
+
+        # Send download command
+        data, packet_type = self.send_command(self.CMD_DOWNCHAR, [0x01])
+        if data and data[0] == 0x00:
+            # Send template data
+            self.serial.write(template_data)
+            # Read acknowledgment
+            ack = self.serial.read(12)  # Read acknowledgment packet
+            if ack and len(ack) >= 12:
+                return True
+        return False
+
     def enroll_fingerprint(self, finger_id):
         """Enroll new fingerprint"""
         print(f"Enrolling fingerprint ID {finger_id}...")
@@ -155,14 +190,45 @@ class FingerprintSensor:
             print("Failed to convert second image")
             return False
 
-        data, _ = self.send_command(self.CMD_REGMODEL)
-        if data and data[0] == 0x00:
-            if self.store_template(finger_id):
-                print(f"Fingerprint {finger_id} enrolled successfully")
-                return True
-
         print("Failed to create model")
         return False
+
+    def enroll_fingerprint_with_template(self, finger_id):
+        """Enroll new fingerprint and return template data"""
+        print(f"Enrolling fingerprint ID {finger_id}...")
+
+        print("Place finger on sensor...")
+        while not self.get_image():
+            time.sleep(0.1)
+        print("Image captured. Remove finger.")
+
+        if not self.image_to_tz(1):
+            print("Failed to convert image to template")
+            return None
+
+        time.sleep(2)
+        print("Place same finger again...")
+        while not self.get_image():
+            time.sleep(0.1)
+        print("Image captured. Remove finger.")
+
+        if not self.image_to_tz(2):
+            print("Failed to convert second image")
+            return None
+
+        data, _ = self.send_command(self.CMD_REGMODEL)
+        if data and data[0] == 0x00:
+            # Store in sensor first
+            if self.store_template(finger_id):
+                # Now extract the template data
+                if self.load_template(finger_id):
+                    template_data = self.upload_template()
+                    if template_data:
+                        print(f"Fingerprint {finger_id} enrolled successfully")
+                        return template_data
+
+        print("Failed to create model or extract template")
+        return None
 
     def led_on(self):
         """Turn on LED"""

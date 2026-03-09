@@ -1,5 +1,6 @@
 import sqlite3
 import json
+import uuid
 from datetime import datetime
 from typing import Optional, List, Dict
 
@@ -40,6 +41,18 @@ class LocalAttendanceDB:
                     synced BOOLEAN DEFAULT 0,
                     created_at TEXT,
                     updated_at TEXT
+                )
+            ''')
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS fingerprints (
+                    id TEXT PRIMARY KEY,
+                    fingerprint_id INTEGER UNIQUE NOT NULL,
+                    template_data BLOB NOT NULL,
+                    student_id TEXT,
+                    enrolled_at TEXT NOT NULL,
+                    is_active BOOLEAN DEFAULT 1,
+                    synced BOOLEAN DEFAULT 0,
+                    FOREIGN KEY (student_id) REFERENCES students (student_id)
                 )
             ''')
             conn.commit()
@@ -141,3 +154,57 @@ class LocalAttendanceDB:
         except Exception as e:
             print(f"Error getting students: {e}")
             return []
+
+    def store_fingerprint_template(self, fingerprint_id: int, template_data: bytes, student_id: str = None) -> bool:
+        """Store fingerprint template in database"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute('''
+                    INSERT OR REPLACE INTO fingerprints
+                    (id, fingerprint_id, template_data, student_id, enrolled_at, is_active, synced)
+                    VALUES (?, ?, ?, ?, ?, 1, 0)
+                ''', (
+                    str(uuid.uuid4()),
+                    fingerprint_id,
+                    template_data,
+                    student_id,
+                    datetime.now().isoformat()
+                ))
+                conn.commit()
+                return True
+        except Exception as e:
+            print(f"Error storing fingerprint template: {e}")
+            return False
+
+    def get_fingerprint_template(self, fingerprint_id: int) -> Optional[bytes]:
+        """Get fingerprint template by ID"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.execute('SELECT template_data FROM fingerprints WHERE fingerprint_id = ? AND is_active = 1', (fingerprint_id,))
+                row = cursor.fetchone()
+                return row[0] if row else None
+        except Exception as e:
+            print(f"Error getting fingerprint template: {e}")
+            return None
+
+    def get_all_fingerprint_templates(self) -> List[Dict]:
+        """Get all fingerprint templates"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.execute('SELECT * FROM fingerprints WHERE is_active = 1')
+                columns = [desc[0] for desc in cursor.description]
+                return [dict(zip(columns, row)) for row in cursor.fetchall()]
+        except Exception as e:
+            print(f"Error getting fingerprint templates: {e}")
+            return []
+
+    def associate_fingerprint_with_student(self, fingerprint_id: int, student_id: str) -> bool:
+        """Associate a fingerprint with a student"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute('UPDATE fingerprints SET student_id = ? WHERE fingerprint_id = ?', (student_id, fingerprint_id))
+                conn.commit()
+                return True
+        except Exception as e:
+            print(f"Error associating fingerprint with student: {e}")
+            return False
