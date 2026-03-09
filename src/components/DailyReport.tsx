@@ -79,11 +79,13 @@ export function DailyReport() {
     });
   };
 
-  const calculateDuration = (checkIn: string, checkOut?: string) => {
-    if (!checkOut) return 'N/A';
+  const getEffectiveCheckout = (checkIn: string, checkOut?: string) => {
+    return checkOut || new Date(new Date(checkIn).getFullYear(), new Date(checkIn).getMonth(), new Date(checkIn).getDate(), 23, 59, 59).toISOString();
+  };
 
+  const calculateDuration = (checkIn: string, checkOut?: string) => {
     const start = new Date(checkIn);
-    const end = new Date(checkOut);
+    const end = new Date(getEffectiveCheckout(checkIn, checkOut));
     const diff = end.getTime() - start.getTime();
 
     const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -124,7 +126,7 @@ export function DailyReport() {
         student.section,
         isPresent ? 'Present' : 'Absent',
         attendanceRecord ? formatTime(attendanceRecord.check_in) : '-',
-        attendanceRecord ? (attendanceRecord.check_out ? formatTime(attendanceRecord.check_out) : 'Still Present') : '-',
+        attendanceRecord ? formatTime(getEffectiveCheckout(attendanceRecord.check_in, attendanceRecord.check_out)) : '-',
         attendanceRecord ? calculateDuration(attendanceRecord.check_in, attendanceRecord.check_out) : '-',
       ];
     });
@@ -309,7 +311,7 @@ export function DailyReport() {
                         {attendanceRecord ? formatTime(attendanceRecord.check_in) : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {attendanceRecord?.check_out ? formatTime(attendanceRecord.check_out) : (attendanceRecord ? 'Still Present' : '-')}
+                        {attendanceRecord?.check_out ? formatTime(attendanceRecord.check_out) : (attendanceRecord ? formatTime(getEffectiveCheckout(attendanceRecord.check_in, attendanceRecord.check_out)) : '-')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {attendanceRecord ? calculateDuration(attendanceRecord.check_in, attendanceRecord.check_out) : '-'}

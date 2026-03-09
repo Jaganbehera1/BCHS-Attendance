@@ -73,11 +73,13 @@ export function MonthlyReport() {
     });
   };
 
-  const calculateDuration = (checkIn: string, checkOut?: string) => {
-    if (!checkOut) return 'N/A';
+  const getEffectiveCheckout = (checkIn: string, checkOut?: string) => {
+    return checkOut || new Date(new Date(checkIn).getFullYear(), new Date(checkIn).getMonth(), new Date(checkIn).getDate(), 23, 59, 59).toISOString();
+  };
 
+  const calculateDuration = (checkIn: string, checkOut?: string) => {
     const start = new Date(checkIn);
-    const end = new Date(checkOut);
+    const end = new Date(getEffectiveCheckout(checkIn, checkOut));
     const diff = end.getTime() - start.getTime();
 
     const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -88,41 +90,38 @@ export function MonthlyReport() {
 
   const downloadExcel = () => {
     const headers = [
+      'Date',
       'Student ID',
       'Name',
       'Class',
       'Section',
       'Email',
-      'Total Days Present',
-      'Total Hours',
-      'Average Hours per Day',
-      'Attendance Percentage',
+      'Check-in Time',
+      'Check-out Time',
+      'Duration',
     ];
 
-    const groupedAttendance = groupByStudent();
+    // Sort attendance by date
+    const sortedAttendance = [...attendance].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
 
-    const rows = Object.entries(groupedAttendance).map(([studentId, records]) => {
-      const student = records[0].students;
-      const stats = calculateStats(records);
-
-      // Calculate attendance percentage (assuming 30 days in month for simplicity)
-      const totalDaysInMonth = new Date(
-        parseInt(selectedMonth.split('-')[0]),
-        parseInt(selectedMonth.split('-')[1]),
-        0
-      ).getDate();
-      const attendancePercentage = ((stats.totalDays / totalDaysInMonth) * 100).toFixed(1);
+    const rows = sortedAttendance.map((record) => {
+      const student = record.students;
+      const checkInTime = formatTime(record.check_in);
+      const checkOutTime = record.check_out ? formatTime(record.check_out) : formatTime(getEffectiveCheckout(record.check_in, record.check_out));
+      const duration = calculateDuration(record.check_in, record.check_out);
 
       return [
-        student?.student_id || studentId,
-        student?.name || 'Unknown',
+        record.date,
+        student?.student_id || '',
+        student?.name || '',
         student?.class_grade || '',
         student?.section || '',
         student?.email || '',
-        stats.totalDays.toString(),
-        stats.totalHours + 'h',
-        stats.avgHours + 'h',
-        attendancePercentage + '%',
+        checkInTime,
+        checkOutTime,
+        duration,
       ];
     });
 

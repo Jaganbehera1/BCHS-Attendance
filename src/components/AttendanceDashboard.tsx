@@ -83,11 +83,13 @@ export function AttendanceDashboard() {
     });
   };
 
-  const calculateDuration = (checkIn: string, checkOut?: string) => {
-    if (!checkOut) return 'In Progress';
+  const getEffectiveCheckout = (checkIn: string, checkOut?: string) => {
+    return checkOut || new Date(new Date(checkIn).getFullYear(), new Date(checkIn).getMonth(), new Date(checkIn).getDate(), 23, 59, 59).toISOString();
+  };
 
+  const calculateDuration = (checkIn: string, checkOut?: string) => {
     const start = new Date(checkIn);
-    const end = new Date(checkOut);
+    const end = new Date(getEffectiveCheckout(checkIn, checkOut));
     const diff = end.getTime() - start.getTime();
 
     const hours = Math.floor(diff / (1000 * 60 * 60));
