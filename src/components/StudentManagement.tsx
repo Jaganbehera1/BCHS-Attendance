@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase, Student } from '../lib/supabase';
-import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Download } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export function StudentManagement() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -8,6 +10,9 @@ export function StudentManagement() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
+  const [activeTab, setActiveTab] = useState<'manage' | 'report'>('manage');
+  const [reportClass, setReportClass] = useState('All');
+  const [reportSection, setReportSection] = useState('All');
   const [formData, setFormData] = useState({
     student_id: '',
     name: '',
@@ -149,6 +154,51 @@ export function StudentManagement() {
     setShowForm(false);
   };
 
+  const getFilteredStudents = () => {
+    return students.filter((student) => {
+      const classMatch = reportClass === 'All' || student.class_grade === reportClass;
+      const sectionMatch = reportSection === 'All' || student.section === reportSection;
+      return classMatch && sectionMatch;
+    });
+  };
+
+  const downloadCsv = (rows: Student[]) => {
+    const headers = ['Student ID', 'Name', 'Class', 'Section'];
+    const csvContent = [headers, ...rows.map((s) => [s.student_id, s.name, s.class_grade, s.section])]
+      .map((row) => row.map((cell) => `"${String(cell || '').replace(/"/g, '""')}"`).join(','))
+      .join('\r\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    link.download = `students_${timestamp}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadPdf = (rows: Student[]) => {
+    const doc = new jsPDF();
+    const head = [['Student ID', 'Name', 'Class', 'Section']];
+    const body = rows.map((s) => [s.student_id, s.name, s.class_grade, s.section]);
+
+    autoTable(doc, {
+      head,
+      body,
+      startY: 20,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [52, 99, 245] },
+    });
+
+    const title = 'Registered Students';
+    doc.setFontSize(14);
+    doc.text(title, 14, 15);
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    doc.save(`students_${timestamp}.pdf`);
+  };
+
   const enrollFingerprint = async () => {
     if (enrolling) return;
 
@@ -197,6 +247,8 @@ export function StudentManagement() {
     }
   };
 
+  const filteredStudents = getFilteredStudents();
+
   if (loading) {
     return <div className="text-center py-8">Loading students...</div>;
   }
@@ -204,17 +256,51 @@ export function StudentManagement() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-bold text-gray-800">Student Management</h2>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          {showForm ? <X size={20} /> : <Plus size={20} />}
-          {showForm ? 'Cancel' : 'Add Student'}
-        </button>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <h2 className="text-2xl font-bold text-gray-800">Student Management</h2>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('manage');
+                setShowForm(false);
+              }}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                activeTab === 'manage'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Manage
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('report');
+                setShowForm(false);
+              }}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                activeTab === 'report'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Reports
+            </button>
+          </div>
+        </div>
+        {activeTab === 'manage' && (
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            {showForm ? <X size={20} /> : <Plus size={20} />}
+            {showForm ? 'Cancel' : 'Add Student'}
+          </button>
+        )}
       </div>
 
-      {showForm && (
+      {activeTab === 'manage' && showForm && (
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
           <h3 className="text-lg font-semibold mb-4">
             {editingId ? 'Edit Student' : 'Add New Student'}
@@ -350,103 +436,208 @@ export function StudentManagement() {
         </div>
       )}
 
-      {/* Desktop Table View */}
-      <div className="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Student ID
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Class
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Section
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Fingerprint ID
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {students.length === 0 ? (
+      {activeTab === 'report' && (
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
+                <select
+                  value={reportClass}
+                  onChange={(e) => setReportClass(e.target.value)}
+                  className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="All">All Classes</option>
+                  <option value="6">Class 6</option>
+                  <option value="7">Class 7</option>
+                  <option value="8">Class 8</option>
+                  <option value="9">Class 9</option>
+                  <option value="10">Class 10</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
+                <select
+                  value={reportSection}
+                  onChange={(e) => setReportSection(e.target.value)}
+                  className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="All">All Sections</option>
+                  <option value="A">Section A</option>
+                  <option value="B">Section B</option>
+                  <option value="C">Section C</option>
+                  <option value="D">Section D</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => downloadCsv(filteredStudents)}
+                className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Download size={18} />
+                Download CSV
+              </button>
+              <button
+                type="button"
+                onClick={() => downloadPdf(filteredStudents)}
+                className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <Download size={18} />
+                Download PDF
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
                 <tr>
-                  <td colSpan={8} className="px-4 sm:px-6 py-4 text-center text-gray-500">
-                    No students found. Add your first student above.
-                  </td>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Student ID
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Class
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Section
+                  </th>
                 </tr>
-              ) : (
-                students.map((student) => (
-                  <tr key={student.id} className="hover:bg-gray-50">
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {student.student_id}
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {student.name}
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {student.class_grade}
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {student.section}
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {student.fingerprint_id}
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {student.email || '-'}
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      <button
-                        onClick={() => toggleActive(student.id, student.is_active)}
-                        className={`px-2 py-1 text-xs font-semibold rounded-full transition-colors ${
-                          student.is_active
-                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                            : 'bg-red-100 text-red-800 hover:bg-red-200'
-                        }`}
-                      >
-                        {student.is_active ? 'Active' : 'Inactive'}
-                      </button>
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEdit(student)}
-                          className="text-blue-600 hover:text-blue-900 p-1"
-                          title="Edit"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(student.id)}
-                          className="text-red-600 hover:text-red-900 p-1"
-                          title="Delete"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-4 sm:px-6 py-4 text-center text-gray-500">
+                      No students found for selected class/section.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  filteredStudents.map((student) => (
+                    <tr key={student.id} className="hover:bg-gray-50">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {student.student_id}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {student.name}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {student.class_grade}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {student.section}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
+
+      {activeTab === 'manage' && (
+        <div className="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Student ID
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Class
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Section
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Fingerprint ID
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {students.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 sm:px-6 py-4 text-center text-gray-500">
+                      No students found. Add your first student above.
+                    </td>
+                  </tr>
+                ) : (
+                  students.map((student) => (
+                    <tr key={student.id} className="hover:bg-gray-50">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {student.student_id}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {student.name}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {student.class_grade}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {student.section}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {student.fingerprint_id}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {student.email || '-'}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        <button
+                          onClick={() => toggleActive(student.id, student.is_active)}
+                          className={`px-2 py-1 text-xs font-semibold rounded-full transition-colors ${
+                            student.is_active
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                              : 'bg-red-100 text-red-800 hover:bg-red-200'
+                          }`}
+                        >
+                          {student.is_active ? 'Active' : 'Inactive'}
+                        </button>
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEdit(student)}
+                            className="text-blue-600 hover:text-blue-900 p-1"
+                            title="Edit"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(student.id)}
+                            className="text-red-600 hover:text-red-900 p-1"
+                            title="Delete"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Card View */}
       <div className="md:hidden space-y-4">
