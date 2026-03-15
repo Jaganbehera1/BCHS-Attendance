@@ -48,10 +48,12 @@ chmod +x /home/pi/attendance-system/*.py
 chmod +x /home/pi/attendance-system/services/*.py
 
 # Setup systemd service
-echo "Setting up systemd service..."
+echo "Setting up systemd services..."
 sudo cp attendance.service /etc/systemd/system/
+sudo cp api_server.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable attendance
+sudo systemctl enable api_server
 
 # Remove old cron job if exists
 echo "Cleaning up old cron jobs..."
@@ -62,8 +64,12 @@ echo "================================"
 echo "Setup Complete!"
 echo "================================"
 echo ""
-echo "To start the service:"
+echo "To start the services:"
 echo "  sudo systemctl start attendance"
+echo "  sudo systemctl start api_server"
+echo ""
+echo "To start the API server manually:"
+echo "  cd /home/pi/attendance-system && python3 api_server.py"
 echo ""
 echo "To run interactively:"
 echo "  cd /home/pi/attendance-system && python3 main.py"
@@ -74,12 +80,14 @@ echo ""
 echo "Next steps:"
 echo "1. Connect fingerprint sensor to USB-to-TTL adapter"
 echo "2. Test sensor: python3 test_sensor.py"
-echo "3. Sync students: python3 sync_students.py (when online)"
-echo "4. Check enrollment status: python3 enroll_enhanced.py list"
-echo "5. Enroll fingerprints: python3 enroll_enhanced.py enroll 1"
-echo "6. Verify enrollment: python3 enroll_enhanced.py verify 1"
-echo "7. Test API: python3 test_api.py <YOUR_API_URL>"
-echo "8. Start attendance: python3 attendance_marker.py <YOUR_API_URL>"
+echo "3. Start API server: python3 api_server.py"
+echo "4. Test API server: python3 test_flask_api.py"
+echo "5. Sync students: python3 sync_students.py (when online)"
+echo "6. Check enrollment status: python3 enroll_enhanced.py list"
+echo "7. Enroll fingerprints: python3 enroll_enhanced.py enroll 1"
+echo "8. Verify enrollment: python3 enroll_enhanced.py verify 1"
+echo "9. Test API: python3 test_api.py <YOUR_API_URL>"
+echo "10. Start attendance: python3 attendance_marker.py <YOUR_API_URL>"
 echo ""
 echo "Note: You need to log out and log back in for serial port permissions to take effect"
 echo "Sync will run automatically every hour via cron job"

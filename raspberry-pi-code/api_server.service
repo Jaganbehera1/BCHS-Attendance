@@ -1,0 +1,17 @@
+[Unit]
+Description=Fingerprint API Server
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/attendance-system
+ExecStart=/usr/bin/python3 /home/pi/attendance-system/api_server.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

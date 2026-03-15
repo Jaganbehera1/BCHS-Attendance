@@ -8,6 +8,7 @@ Complete Python implementation for Raspberry Pi fingerprint sensor integration w
 - **Offline-First**: Stores attendance records locally when internet is unavailable
 - **Automatic Sync**: Background synchronization when connection is restored
 - **Interactive Control Panel**: User-friendly menu system for all operations
+- **REST API**: Flask-based API server for remote enrollment operations
 - **Reliable**: Continues working even during network outages
 - **Real-time**: Immediate attendance marking with local confirmation
 
@@ -15,6 +16,7 @@ Complete Python implementation for Raspberry Pi fingerprint sensor integration w
 
 ```
 main.py (Orchestrator)
+├── api_server.py               # Flask REST API server
 ├── services/
 │   ├── attendance_service.py    # Core attendance monitoring
 │   ├── sync_service.py          # Data synchronization
@@ -23,6 +25,51 @@ main.py (Orchestrator)
 │   └── config.py                # Configuration management
 ├── local_db.py                  # Local SQLite database
 └── fingerprint_utils.py         # Sensor communication
+```
+
+## API Server
+
+The system includes a Flask-based REST API server for remote operations:
+
+### Starting the API Server
+```bash
+python3 api_server.py
+```
+
+### API Endpoints
+
+#### POST /enroll
+Enroll a new fingerprint and automatically assign the next available ID.
+
+**Response:**
+```json
+{
+  "fingerprint_id": 1
+}
+```
+
+**Error Responses:**
+```json
+{
+  "error": "Sensor not connected"
+}
+{
+  "error": "No available fingerprint IDs"
+}
+{
+  "error": "Enrollment failed - fingerprints did not match"
+}
+```
+
+#### GET /health
+Check the health status of the API server and sensor connection.
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "sensor_connected": true
+}
 ```
 
 ## Service Architecture

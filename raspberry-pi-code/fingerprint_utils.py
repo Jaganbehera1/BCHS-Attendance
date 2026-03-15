@@ -190,6 +190,12 @@ class FingerprintSensor:
             print("Failed to convert second image")
             return False
 
+        data, _ = self.send_command(self.CMD_REGMODEL)
+        if data and data[0] == 0x00:
+            if self.store_template(finger_id):
+                print(f"Fingerprint {finger_id} enrolled successfully")
+                return True
+
         print("Failed to create model")
         return False
 

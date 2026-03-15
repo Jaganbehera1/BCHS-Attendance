@@ -7,6 +7,7 @@ export function StudentManagement() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
   const [formData, setFormData] = useState({
     student_id: '',
     name: '',
@@ -148,6 +149,54 @@ export function StudentManagement() {
     setShowForm(false);
   };
 
+  const enrollFingerprint = async () => {
+    if (enrolling) return;
+
+    setEnrolling(true);
+    try {
+      alert('Place finger on scanner...');
+
+      // Optional direct API endpoint for local Raspberry Pi (set via VITE_ENROLLMENT_API_URL)
+      const localApiUrl = import.meta.env.VITE_ENROLLMENT_API_URL;
+
+      let fingerprintId: number | null = null;
+
+      if (localApiUrl) {
+        const response = await fetch(localApiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const json = await response.json();
+        if (!response.ok) {
+          throw new Error(json.error || 'Enrollment failed');
+        }
+
+        fingerprintId = json.fingerprint_id;
+      } else {
+        const { data, error } = await supabase.functions.invoke('enroll-fingerprint');
+        if (error) {
+          throw error;
+        }
+        fingerprintId = data.fingerprint_id;
+      }
+
+      if (fingerprintId == null) {
+        throw new Error('Enrollment returned no ID');
+      }
+
+      setFormData({ ...formData, fingerprint_id: fingerprintId.toString() });
+      alert('Enrollment successful!');
+    } catch (error: any) {
+      console.error('Enrollment error:', error);
+      alert(`Enrollment failed: ${error.message || 'Unknown error'}`);
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-8">Loading students...</div>;
   }
@@ -234,14 +283,25 @@ export function StudentManagement() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Fingerprint ID *
               </label>
-              <input
-                type="number"
-                required
-                value={formData.fingerprint_id}
-                onChange={(e) => setFormData({ ...formData, fingerprint_id: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="e.g., 1"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  required
+                  value={formData.fingerprint_id}
+                  onChange={(e) => setFormData({ ...formData, fingerprint_id: e.target.value })}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Click Enroll Fingerprint"
+                  readOnly
+                />
+                <button
+                  type="button"
+                  onClick={enrollFingerprint}
+                  disabled={enrolling}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-purple-400 transition-colors"
+                >
+                  {enrolling ? 'Enrolling...' : 'Enroll Fingerprint'}
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
